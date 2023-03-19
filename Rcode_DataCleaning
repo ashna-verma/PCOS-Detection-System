@@ -1,0 +1,53 @@
+install.packages("dplyr")
+install.packages("VIM")
+install.packages("missForest")
+install.packages("mice")
+library(dplyr)
+library(missForest)
+library(VIM)
+library(mice)
+
+data<- read.csv("../input/pcos1/pcos_data.csv")
+df1<- data.frame(data)
+head(data,5)
+tail(data,5)
+summary(data)
+dim(data)
+colnames(data)
+
+df2<-df1
+df2$Age= as.numeric(df2$Age)
+df2$PCOS =as.numeric(df2$PCOS)
+df2$Blood_Group=as.numeric(df2$Blood_Group)
+df2$Weight_kg=as.numeric(df2$Weight_kg)
+
+boxplot(df2$Age,df2$RestingBP,df2$Cholesterol,df2$MaxHR)
+Q1 <- quantile(df2$Age, .25,na.rm=TRUE)
+Q3 <- quantile(df2$Age, .75,na.rm=TRUE)
+IQR <- IQR(df2$Age,na.rm=TRUE)
+no_outliers<- subset(df2, df2$Age > (Q1 - 1.5*IQR) & df2$Age < (Q3 + 1.5*IQR))
+
+Q1 <- quantile(no_outliers$PCOS, .25,na.rm=TRUE)
+Q3 <- quantile(no_outliers$PCOS, .75,na.rm=TRUE)
+IQR <- IQR(no_outliers$PCOS,na.rm=TRUE)
+no_outliers<- subset(no_outliers, no_outliers$PCOS > (Q1 - 1.5*IQR) & no_outliers$PCOS <(Q3 + 1.5*IQR))
+
+Q1 <- quantile(no_outliers$Blood_Group, .25,na.rm=TRUE)
+Q3 <- quantile(no_outliers$Blood_Group, .75,na.rm=TRUE)
+IQR <- IQR(no_outliers$Blood_Group,na.rm=TRUE)
+no_outliers<- subset(no_outliers, no_outliers$Blood_Group > (Q1 - 1.5*IQR) & no_outliers$Blood_Group < (Q3 + 1.5*IQR))
+
+Q1 <- quantile(no_outliers$Weight_kg, .25,na.rm=TRUE)
+Q3 <- quantile(no_outliers$Weight_kg, .75,na.rm=TRUE)
+IQR <- IQR(no_outliers$Weight_kg,na.rm=TRUE)
+no_outliers<- subset(no_outliers, no_outliers$Weight_kg > (Q1 - 1.5*IQR) &
+no_outliers$Weight_kg< (Q3 + 1.5*IQR))
+
+final_dataset<- no_outliers
+
+boxplot(final_dataset$Age,final_dataset$PCOS,final_dataset$Blood_Group,final_dataset$Weight_kg)
+md.pattern(final_dataset)
+mice_imputes= mice(final_dataset, m=5, maxit=25)
+imputed_data= complete(mice_imputes,5)
+
+View(imputed_data)
